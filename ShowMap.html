@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Simple Map</title>
+   <link rel="stylesheet" href="https://js.arcgis.com/3.23/esri/css/esri.css">
+    <style>
+      html, body, #map {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  <script src="https://js.arcgis.com/3.23/"></script>
+    <script>
+        
+          var map;
+         
+        function ShowMap(){     
+                  
+           var zoom=document.getElementById("setzoom").value;
+            var logitude=document.getElementById("setlog").value;
+            var latitude=document.getElementById("setlag").value;
+            var center=[logitude,latitude];
+            var basemap=document.getElementById("basemap").value;
+            //alert(center);
+
+      require(["esri/map", "dojo/domReady!"], function(Map) {
+        map = new Map("map", {
+          basemap: basemap,  //For full list of pre-defined basemaps, navigate to http://arcg.is/1JVo6Wd
+          center: center , // longitude, latitude
+          zoom: zoom
+          
+        });
+          
+      }); 
+             
+        }
+        function UpgradeMap(){
+            var zoom=document.getElementById("setzoom").value;
+            var logitude=document.getElementById("setlog").value;
+            var latitude=document.getElementById("setlag").value;
+            var center=[logitude,latitude];
+            var basemap=document.getElementById("basemap").value;
+               map.setBasemap(basemap);
+              // map.setZoom(zoom);
+               //map.centerAt(center);
+            map.centerAndZoom(center,zoom);
+            
+        }
+     
+     
+    </script>
+  </head>
+
+  <body>
+ 
+    <div id="setmenu">
+     级别： <input type="text" id="setzoom" />
+     经度： <input type="text" id="setlog" />
+     纬度： <input type="text" id="setlag" />
+    <select id="basemap">
+    <option value="topo">topo</option>
+    <option value="streets">streets</option>
+    <option value="satellite">satellite</option>
+    <option value="hybrid">hybrid</option>
+    <option value="gray">gray</option>
+    <option value="oceans">oceans</option>
+    <option value="national-geographic">national-geographic</option> 
+    <option value="osm">osm</option>  
+    </select>
+      <input type="button" value="ShowMap"  onclick="ShowMap()"/>
+      <input type="button" value="UpgradeMap"  onclick="UpgradeMap()"/>
+      </div>
+      <div id="map"></div>
+  </body>
+</html>
