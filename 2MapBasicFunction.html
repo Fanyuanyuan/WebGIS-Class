@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Simple Map</title>
+   <link rel="stylesheet" href="https://js.arcgis.com/3.23/esri/css/esri.css">
+    <style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+         #mapcontainer
+        {
+            width: 100%;
+            height: 100%;
+        }
+        #map
+        {
+            position:absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #map2
+        {
+            position: absolute;
+            width: 100%;
+            height: 100%; 
+        }
+
+    </style>
+  <script src="https://js.arcgis.com/3.23/"></script>
+    <script>
+        
+    var map;
+    var map2;
+    var featureLayer;
+    var dynamicMapServiceLayer;
+    var layernum=0;
+    var swipeif=1;
+       // document.getElementById('layernum').value=layernum;//给文本框赋值并显示
+    require([
+        "esri/map",
+        "esri/layers/FeatureLayer",
+        "esri/layers/ArcGISDynamicMapServiceLayer",
+        "esri/layers/ImageParameters",
+        "dojo/domReady!"],    
+    function(Map,FeatureLayer,ArcGISDynamicMapServiceLayer, ImageParameters){
+        
+        map = new Map("map", {
+        basemap: "hybrid",
+        center: [-82.44109, 35.6122],
+        zoom: 17
+    });
+       
+        map2 = new Map("map2", {
+          basemap: "gray",  
+          center: [-122.45, 37.75], // longitude, latitude
+          zoom: 13
+        });
+         map.on("extent-change",function(event){
+           
+          if(map2)
+              {
+                  map2.setExtent(event.extent);
+              }
+             document.getElementById('scale').value=map.getScale();
+             
+        })
+        map.on("mouse-move",function(e){
+            
+                document.getElementById('coords').value=e.mapPoint.x+","+e.mapPoint.y;     
+               
+               })
+
+    featureLayer = new FeatureLayer("https://services.arcgis.com/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Landscape_Trees/FeatureServer/0",{id:"featureLayer1"});
+    var imageParameters = new ImageParameters();
+        imageParameters.format = "jpeg"; //set the image type to PNG24, note default is PNG8.
+
+        //Takes a URL to a non cached map service.
+       dynamicMapServiceLayer = new ArcGISDynamicMapServiceLayer("https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Population_World/MapServer", {
+           id:"dynamicMapServiceLayer",
+           "opacity" : 0.8,
+          "imageParameters" : imageParameters
+        });
+       
+      });
+      
+    function checkBut1(){
+         
+         var checkstatus = document.all.checkbox1.checked;
+         target=map.getLayer("featureLayer1");
+         if(checkstatus == true){
+         target.show();
+           }else {
+         target.hide();
+          }
+     }
+    function deleteLayer1(){
+          if(featureLayer!=null){
+           map.removeLayer(featureLayer);  
+            }
+          layernum= layernum-1;  
+          document.getElementById('layernum').value=layernum;//给文本框赋值并显示
+        }
+         
+    function addLayer1(){
+                 
+        map.addLayer(featureLayer);
+        featureLayer.hide();
+        layernum= layernum+1;
+             
+        document.getElementById('layernum').value=layernum;//给文本框赋值并显示
+        //alert(layernum);
+        }
+        
+    function checkBut2(){
+         
+         var checkstatus = document.all.checkbox2.checked;
+         target=map.getLayer("dynamicMapServiceLayer");
+         if(checkstatus == true){
+         target.show();
+           }else {
+         target.hide();
+          }
+     }
+     
+     function addLayer2(){
+          
+              map.addLayer(dynamicMapServiceLayer);
+              dynamicMapServiceLayer.hide();
+              layernum= layernum+1;
+         
+         document.getElementById('layernum').value=layernum;//给文本框赋值并显示
+        }
+    function deleteLayer2(){
+        if(dynamicMapServiceLayer!=null){
+            map.removeLayer(dynamicMapServiceLayer);     
+        }
+           layernum= layernum-1; 
+        document.getElementById('layernum').value=layernum;//给文本框赋值并显示
+        }
+        
+    function setBasemap(){
+         var basemap=document.getElementById("basemap").value;
+         map.setBasemap(basemap);
+            }
+        
+    function clipImage(){
+        if(swipeif==1){
+            console.log(event.clientX);
+            document.getElementById("map2").style.clip="rect(0px,"+event.clientX +"px,500px,0px)";  
+        }
+       
+        
+        }
+        
+        function stopswipe(){ 
+            swipeif=2;   
+        }
+     
+    </script>
+  </head>
+
+  <body  >
+    <select id="basemap" onchange="setBasemap()">
+    <option value="topo">topo</option>
+    <option value="streets">streets</option>
+    <option value="satellite">satellite</option>
+    <option value="hybrid">hybrid</option>
+    <option value="gray">gray</option>
+    <option value="oceans">oceans</option>
+    <option value="national-geographic">national-geographic</option> 
+    <option value="osm">osm</option>  
+    </select>
+    <input type="checkbox" id="checkbox1" onclick="checkBut1()"/>featurelayer
+    <input type="button" id="Del1" value="Del"  onclick="deleteLayer1()"/>
+    <input type="button" id="Add1" value="Add"  onclick="addLayer1()" />
+    <input type="checkbox" id="checkbox2" onclick="checkBut2()"/>dynamicMapServiceLayer
+    <input type="button" id="Del2" value="Del"  onclick="deleteLayer2()" />
+    <input type="button" id="Add2" value="Add"  onclick="addLayer2()"/>
+   
+    图层数量：<input type="text" id="layernum" value="0"/>
+     
+      <input type="text" id="coords" style="width: 260px;background-color: beige"/>
+      <input type="text" id="scale" style="width: 100px;background-color: beige" />
+      <div id="mapcontainer" onmousemove="clipImage()" ondblclick="stopswipe()">
+       <div id="map"></div>
+       <div id="map2"></div>
+      </div>
+     
+     
+       
+  </body>
+</html>
