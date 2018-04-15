@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>Simple Map</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.23/esri/css/esri.css">
+    <style>
+        html, body{
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            float:left;
+            margin: 0;
+            padding: 0;
+            z-index: 1;
+        }
+        #map2{
+            position: absolute;
+            top: 0px;
+            float:right;
+            width: 100%;
+            height: 100%;
+            border: 1px solid black;
+            z-index: 2;
+        }
+        #change_basemap {
+          top:      20px;
+          left:     70px;
+          width:    10px;
+          height:   10px;
+          position: absolute;
+          z-index:  3;
+        }
+        #layer_control {
+          top:      20px;
+          right:    70px;
+          width:    120px;
+          height:   100px;
+          position: absolute;
+          z-index:  3;
+        }
+        #basemap_gallery {
+          top:      40px;
+          width:    40px;
+          height:   20px;
+          position: absolute;
+          z-index:  3;
+        }
+        #scale_position{
+          bottom:   0;
+          left:     20px;
+          width:   120px;
+          position: absolute;
+          z-index:  3;
+        }
+        #_scale{
+            bottom: 0;
+            position: absolute;
+            float:left;
+            z-index:  3;
+        }
+        #_pox{
+            bottom: 0;
+            left:175px;
+            position: absolute;
+            z-index:  3;
+        }
+        #_poy{
+            bottom: 0;
+            left:350px;
+            position: absolute;
+            z-index:  3;
+        }
+        #_roller{
+            top: 0;
+            position: absolute;
+            z-index:  3;
+        }
+        #sweep1{
+            top: 0;
+            left:350px;
+            position: absolute;
+            z-index:  4;
+        }
+        #sweep2{
+            top: 0;
+            left:700px;
+            position: absolute;
+            z-index:  4;
+        }
+    </style>
+    <script src="https://js.arcgis.com/3.23/"></script>
+    <script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery/jquery-1.4.min.js"></script>
+    <script>
+          var i=1;
+          var map;
+          var demographicsLayer;
+          var vectorLayer;
+          require([
+          "dojo/dom-construct",
+          "esri/Color",
+          "esri/dijit/Geocoder",
+          "esri/dijit/Popup",
+          "esri/InfoTemplate",
+
+          "esri/layers/ArcGISDynamicMapServiceLayer",
+          "esri/map",
+          "esri/symbols/SimpleFillSymbol",
+          "esri/symbols/SimpleLineSymbol", 
+          "esri/layers/ArcGISImageServiceVectorLayer",
+          "esri/renderers/VectorFieldRenderer",
+          "esri/SpatialReference",
+          "dojo/domReady!"
+        ], function(
+          domConstruct, Color, Geocoder, Popup, InfoTemplate, 
+          ArcGISDynamicMapServiceLayer, Map, SimpleFillSymbol, SimpleLineSymbol,
+           ArcGISImageServiceVectorLayer, VectorFieldRenderer, SpatialReference
+        ) {
+            map = new Map("map", {
+                basemap: "topo",  //For full list of pre-defined basemaps, navigate to http://arcg.is/1JVo6Wd
+                center: [-122.45, 37.75], // longitude, latitude
+                zoom: 13
+            }); 
+            
+            map2 = new Map("map2", {
+                basemap: "gray",  
+                center: [-122.45, 37.75], // longitude, latitude
+                zoom: 13
+            });
+            document.getElementById("map2").style.visibility="hidden";
+            var _countyCensusInfoTemplate = new InfoTemplate();
+                _countyCensusInfoTemplate.setTitle("<b>Census Information</b>");
+
+                var _blockGroupInfoTemplate = new InfoTemplate();
+                _blockGroupInfoTemplate.setTitle("<b>Census Information</b>");
+
+                var demographicsLayerURL = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer";
+                var demographicsLayerOptions = {
+                "id": "demographicsLayer",
+                "opacity": 0.8,
+                "showAttribution": false
+              };
+                demographicsLayer = new ArcGISDynamicMapServiceLayer(demographicsLayerURL, demographicsLayerOptions);
+                demographicsLayer.setInfoTemplates({
+                    1: { infoTemplate: _blockGroupInfoTemplate },
+                    2: { infoTemplate: _countyCensusInfoTemplate }
+                });
+                demographicsLayer.setVisibleLayers([1, 2]);  
+
+                var url = "https://sampleserver6.arcgisonline.com/arcgis/rest/services/ScientificData/NDFD_wind/ImageServer";
+                vectorLayer = new ArcGISImageServiceVectorLayer(url, {
+                rendererStyle: VectorFieldRenderer.STYLE_CLASSIFIED_ARROW
+                });
+
+                //Set the size of the arrows based on wind speed  
+                var sizeInfoVar = {
+                  type: "sizeInfo",
+                  minSize: 3,
+                  maxSize: 100,
+                  minDataValue: 0.04,
+                  maxDataValue: 32
+                };
+                var renderer = new VectorFieldRenderer({
+                  style: VectorFieldRenderer.STYLE_BEAUFORT_KN,
+                  flowRepresentation: VectorFieldRenderer.FLOW_TO
+                });
+                //Apply the size settings to the renderer
+                renderer.setVisualVariables([sizeInfoVar]);
+                vectorLayer.setRenderer(renderer); 
+                map.on("mouse-move", function(e){
+                    document.getElementById("_pox").value=e.mapPoint.x;
+                    document.getElementById("_poy").value=e.mapPoint.y;
+                });
+              
+                map.on("extent-change",function(event){
+                    if(map2){
+                        map2.setExtent(event.extent);
+                    }
+                })
+                
+            });
+        //******************************************************************************************************
+        //卷帘功能
+            function clipImage()
+            {
+                if(i==0)
+                document.getElementById("map2").style.clip="rect(0px,"+event.clientX +"px,1000px,0px)"; 
+            }
+            function stopsweep()
+            {
+                
+                i=1;
+            }
+            function startsweep()
+            {
+                document.getElementById("map2").style.visibility="visible"
+                i=0;
+            }
+        //*******************************************************************************************************
+        //打开切换图层窗口
+        function show_laygal(){
+            if(document.getElementById("layer_gallery").style.visibility=="hidden")
+                document.getElementById("layer_gallery").style.visibility="visible";
+            else
+                document.getElementById("layer_gallery").style.visibility="hidden";
+        }    
+
+        function add_geolayer(){           
+
+                if(document.getElementById("demolayer").checked==true){        
+                    map.addLayer(demographicsLayer);
+                }
+
+                if(document.getElementById("demolayer").checked==false){        
+                    map.removeLayer(demographicsLayer);
+                }      
+        }
+
+        function add_imglayer(){
+                if(document.getElementById("imagelayer").checked==true){        
+                    map.addLayer(vectorLayer);
+                }
+
+                if(document.getElementById("imagelayer").checked==false){        
+                    map.removeLayer(vectorLayer);
+                } 
+        }    
+        //******************************************************************************************************* 
+        //打开切换地图窗口
+        function show_gallery(){
+            if(document.getElementById("basemap_gallery").style.visibility=="hidden")
+                document.getElementById("basemap_gallery").style.visibility="visible";
+            else
+                document.getElementById("basemap_gallery").style.visibility="hidden";
+        }
+
+        //切换底图
+        function change_topo(){
+            map.setBasemap("topo");
+        }
+        function change_darkgray(){
+            map.setBasemap("dark-gray");
+        }
+        function change_hybrid(){
+            map.setBasemap("hybrid");
+        }
+        function change_streets(){
+            map.setBasemap("streets");
+        }
+        
+        
+        //********************************************************************************************************
+        //获取比例尺和坐标
+        function findscalepo(){
+            document.getElementById("_scale").value=map.getScale();
+            clipImage();
+        }
+        
+    
+    </script>
+  </head>
+
+  <body>
+    <div id="change_basemap">
+        <button id="_change" value="切换底图" ; onclick="show_gallery()">切换地图</button>
+        <div id="basemap_gallery" style="visibility:hidden" >
+            <img src="base01.PNG"  onclick="change_topo()" border="2"/> 
+            <img src="darkgrey.PNG"  onclick="change_darkgray()" border="2"/>
+            <img src="hybride.png"  onclick="change_hybrid()" border="2"/> 
+            <img src="streets.png"  onclick="change_streets()" border="2"/> 
+        </div>
+    </div>
+    
+    <div id="layer_control">
+        <button id="layer_change" value="切换图层" ; onclick="show_laygal()">图层</button>
+        <div id="layer_gallery" style="visibility:hidden" >            
+            <form action="/example/html/form_action.asp" method="get">
+                <p><input id="demolayer" type="checkbox" value="Bike" onchange="add_geolayer()" />GraphicLayer</p>
+                <p><input id="imagelayer" type="checkbox"  value="Car" onchange="add_imglayer()" />Imagelayer</p>
+            </form>
+        </div>
+    </div>
+    
+    <div id="map" onmousemove="findscalepo()" ondblclick="stopsweep()">
+        <input id="_scale" type="text" value="0">  
+        <input id="_pox" type="text" value="0">  
+        <input id="_poy" type="text" value="0">
+        <div id="map2"></div>
+    </div>
+<!--    <button id="sweep1" onclick="stopsweep()">stopsweep</button>-->
+    <button id="sweep2" onclick="startsweep()">startsweep</button>
+  </body>
+</html>
