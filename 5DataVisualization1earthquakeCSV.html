@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
+    <title>CSVLayer sample</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/3.23/esri/css/esri.css">
+    <style>
+      html, body, #map {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background-color: #FFF;
+        overflow: hidden;
+        font-family: "Trebuchet MS";
+      }
+    </style>
+    <script src="https://js.arcgis.com/3.23/"></script>
+    <script>
+      var map, csv,simpleRenderer, template,heatmapRenderer;
+    
+
+      require([
+        "esri/map", 
+        "esri/layers/CSVLayer",
+        "esri/layers/FeatureLayer",   
+        "esri/Color",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/renderers/SimpleRenderer",
+        "esri/renderers/HeatmapRenderer",
+        "esri/InfoTemplate",
+        "esri/config",
+        "dojo/domReady!"
+      ], function(Map, CSVLayer, FeatureLayer,Color, SimpleMarkerSymbol, SimpleRenderer, HeatmapRenderer,InfoTemplate, esriConfig) {
+        // Use CORS
+        esriConfig.defaults.io.corsEnabledServers.push("earthquake.usgs.gov"); // supports CORS
+
+        // Use proxy if the server doesn't support CORS
+        // esriConfig.defaults.io.proxyUrl = "/proxy/";  
+        
+        map = new Map("map", {
+          basemap: "gray",
+          center: [ -60, -10 ],
+          zoom: 4 
+        });
+        csv = new CSVLayer("all_month2.csv", {
+          copyright: "USGS.gov"
+        });
+       
+        var orangeRed = new Color([50, 69, 0, 0.5]); // hex is #ff4500
+        var marker = new SimpleMarkerSymbol("solid", 15, null, orangeRed);
+         simpleRenderer = new SimpleRenderer(marker);
+         template = new InfoTemplate("${type}", "${place}");
+
+         heatmapRenderer = new HeatmapRenderer({
+          field: "depth",
+          blurRadius: 12,
+          maxPixelIntensity: 250,
+          minPixelIntensity: 50
+        });
+      
+      });
+        function SimpleRenderer(){
+        var checkstatus = document.all.checkbox1.checked;
+         if(checkstatus == true){
+         csv.show();
+         csv.setRenderer(simpleRenderer);
+         csv.setInfoTemplate(template);
+         map.addLayer(csv);
+           }else {
+         //map.removeLayer(csv);
+         csv.hide();
+          }        
+        }
+         function HeatmapRenderer(){
+          var checkstatus = document.all.checkbox2.checked;
+          if(checkstatus == true){
+            csv.show();
+            csv.setRenderer( heatmapRenderer); 
+            map.addLayer(csv);  
+          }else {
+         //map.removeLayer(csv);
+         csv.hide();
+          }         
+         }
+    </script>
+  </head>
+
+  <body>
+    <input type="checkbox" id="checkbox1" onclick="SimpleRenderer()"/>SimpleRenderer
+    <input type="checkbox" id="checkbox2" onclick="HeatmapRenderer()"/>HeatmapRenderer
+    <div id="map"></div>
+  </body>
+</html>
